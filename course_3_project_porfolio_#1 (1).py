@@ -4,7 +4,6 @@
 # **Course 3 mock role as a Data Analyst at the company Tiktok
 # # **Course 3 End-of-course project: Exploratory data analysis**
 # 
-
 # 
 # **The purpose** of this project is to conduct exploratory data analysis on a provided data set. Your mission is to continue the investigation you began in C2 and perform further EDA on this data with the aim of learning more about the variables. Of particular interest is information related to what distinguishes claim videos from opinion videos.
 # 
