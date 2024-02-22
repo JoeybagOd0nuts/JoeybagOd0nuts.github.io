@@ -1,0 +1,240 @@
+--SQL Portfolio Project #2 Queries
+
+
+
+
+--I am looking at the total amount of people infected with covid and the likelyhood of death 
+--Total cases compared to total deaths
+
+SELECT 
+  location, 
+  date,
+  total_cases, 
+  total_deaths, 
+  (total_deaths/total_cases)*100 as Death_Percentage
+FROM
+ `covid-19-project-port-num-2.covid_19.Covid_19_Deaths`
+where 
+  location like '%United S%'
+
+
+
+
+-- i am looking for total cases vs population
+--shows percentage of population that was infected with covid
+
+
+SELECT 
+  location,
+  date,
+  population,
+  total_cases,
+  (total_cases/population)*100 as Death_Percentage
+FROM
+ `covid-19-project-port-num-2.covid_19.Covid_19_Deaths`
+where
+ location like '%United S%'
+
+
+
+--Looking at countries  with highest infection rate compared to Population
+
+SELECT
+  location,
+  population,
+  MAX(total_cases) as Highest_Infection_Count,
+  MAX((total_cases/population))*100 as Percent_population_Infected
+FROM
+  `covid-19-project-port-num-2.covid_19.Covid_19_Deaths`
+--where location like '%United S%'
+GROUP BY
+ location,
+ population
+
+
+--  Showing Countries with Highest Death Count Per Population
+
+SELECT
+  location,
+  MAX(total_deaths) AS Total_Death_Count
+FROM 
+  `covid-19-project-port-num-2.covid_19.Covid_19_Deaths`
+--where location like '%United S%'
+WHERE
+ location is not null
+GROUP BY
+ location
+ORDER BY
+ Total_Death_Count desc
+
+
+
+
+--IM GOING TO SEPERATE THE DATA BY CONTINENT
+
+SELECT 
+  continent, 
+  MAX(Total_Deaths) as Total_Death_Count 
+FROM
+ `covid-19-project-port-num-2.covid_19.covid_19_raw`
+--where location like '%states%'
+where 
+  continent is not null
+GROUP BY 
+  continent
+ORDER BY 
+  total_Death_Count desc
+
+
+
+
+--Global Numbers
+
+SELECT 
+  SUM(new_cases) as total_cases,
+  SUM(new_deaths) as total_deaths,
+  SAFE_DIVIDE(SUM(new_deaths), SUM(new_cases)) * 100 as DeathPercentage
+FROM 
+  `covid-19-project-port-num-2.covid_19.covid_19_raw`
+WHERE 
+  continent IS NOT NULL;
+
+
+
+--looking at total population vs vaccinations
+
+SELECT * 
+FROM
+ `covid-19-project-port-num-2.covid_19.Covid_19_Deaths` as dea
+JOIN
+ `covid-19-project-port-num-2.covid_19.Covid_19_Vaccinations` as vac
+ON dea.location = vac.location
+and dea.date = vac.date
+
+SELECT 
+  dea.location,
+  dea.date,
+  dea.population,
+  vac.new_vaccinations
+FROM 
+  `covid-19-project-port-num-2.covid_19.Covid_19_Deaths` as dea
+JOIN
+   `covid-19-project-port-num-2.covid_19.Covid_19_Vaccinations` as vac
+ON dea.location = vac.location
+and dea.date = vac.date
+where dea.location is not null
+order by 1,2,3
+
+
+--I need to create tables that have the continent column
+
+select
+  continent,
+  location,
+  date,
+  total_cases,
+  new_cases,
+  total_deaths,
+  population
+FROM 
+  `covid-19-project-port-num-2.covid_19.covid_19_raw`
+
+--I created a new table that has the correct columns for sufficient analysis
+
+SELECT *
+FROM
+ `covid-19-project-port-num-2.covid_19.Covid_Deaths` as dea
+JOIN 
+`covid-19-project-port-num-2.covid_19.Covid_19_Vaccinations` as vac
+ON dea.location = vac.location
+AND dea.continent = vac.continent
+where dea.continent is not null
+
+
+--Looking at Total Popultion vs Vaccinations
+
+
+SELECT
+  dea.continent,
+  dea.location,
+  dea.date,
+  dea.population,
+  vac.new_vaccinations
+FROM 
+  `covid-19-project-port-num-2.covid_19.Covid_Deaths` as dea
+JOIN
+ `covid-19-project-port-num-2.covid_19.Covid_19_Vaccinations` as vac
+ON dea.location = vac.location
+AND dea.date = vac.date
+where dea.continent is not null
+AND dea.location like 'Canada'
+
+
+
+--Looking at Total Popultion vs Vaccinations and partitioning by location and or country
+
+
+
+SELECT
+   dea.continent,
+   dea.location,
+   dea.date,
+   dea.population,
+   vac.new_vaccinations,
+SUM(vac.new_vaccinations) OVER(PARTITION BY dea.location 
+ORDER BY
+ dea.location,
+ dea.date) 
+ AS
+ rolling_people_vaxxed
+FROM 
+`covid-19-project-port-num-2.covid_19.Covid_Deaths` as dea
+JOIN
+ `covid-19-project-port-num-2.covid_19.Covid_19_Vaccinations` as vac
+ON dea.location = vac.location
+AND dea.date = vac.date
+where dea.continent is not null
+AND dea.location LIKE 'Albania'
+order by 2,3
+
+
+
+---USE Temp Table
+
+CREATE Table IF NOT EXISTS 
+`covid_19.Percent_population_Vaxxed`
+(
+  continent string,
+  location string,
+  date datetime,
+  population float64  ,
+  new_vaccinations float64
+)
+INSERT INTO
+   `covid_19.Percent_population_Vaxxed`
+(
+SELECT
+  dea.continent,
+  dea.location,
+  dea.date,
+  dea.population,
+  vac.new_vaccinations,
+SUM(vac.new_vaccinations) OVER(PARTITION BY dea.location
+ORDER BY
+  dea.location,
+  dea.date)
+AS
+  `covid.19Percent_population_Vaxxed`
+FROM 
+  `covid-19-project-port-num-2.covid_19.Covid_Deaths` as dea
+JOIN
+ `covid-19-project-port-num-2.covid_19.Covid_19_Vaccinations` as vac
+  ON dea.location = vac.location
+  AND dea.date = vac.date
+where
+ dea.continent is not null
+--order by 2,3
+)
+SELECT *
+From 
+  `covid.19Percent_population_Vaxxed`
